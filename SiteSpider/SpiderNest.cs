@@ -74,18 +74,19 @@ namespace SiteSpider
         {
             return _pages.TryDequeue(out result);
         }
-        
+
         public void AddUrl(Link link)
         {
-            WorkerBusy();
-
             bool isExists;
             if (_visited.TryGetValue(link.Url, out isExists))
                 if (isExists)
                     return;
 
-            _visited.TryAdd(link.Url, true);
-            _pages.Enqueue(link);
+
+            if (_visited.TryAdd(link.Url, true)){
+                WorkerBusy();
+                _pages.Enqueue(link);
+            }
         }
 
         private string fixStartPage(string value)
@@ -121,13 +122,11 @@ namespace SiteSpider
 
         public void WorkerFree()
         {
-            Console.WriteLine("WorkerFree");
             System.Threading.Interlocked.Decrement(ref _busyWorkers);
         }
 
         public void WorkerBusy()
         {
-            Console.WriteLine("WorkerBusy");
             System.Threading.Interlocked.Increment(ref _busyWorkers);
         }
     }
