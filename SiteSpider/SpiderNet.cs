@@ -115,26 +115,37 @@ namespace SiteSpider
             {
                 Log("[GET] " + link.Url);
                 string data = client.DownloadString(link.Url);
+                MatchCollection matches;
 
-                var images = Regex.Matches(data, "<img.*src=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
-                foreach (Match image in images)
-                {
-                    Link newUrl = FixUrl(image.Groups[1].ToString(), link.Url, LinkType.Resource);
-                    if (newUrl.Url != null)
-                        AddUrl(newUrl);
-                }
+                //link tags
+                matches = Regex.Matches(data, "<link.*?href=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
+                EachMatch(link, matches, LinkType.Resource);
 
-                var matches = Regex.Matches(data, "<a.*href=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
-                foreach (Match match in matches)
-                {
-                    Link newUrl = FixUrl(match.Groups[1].ToString(), link.Url);
-                    if (newUrl.Url != null)
-                        AddUrl(newUrl);
-                }
+                //scripts
+                matches = Regex.Matches(data, "<script.*?src=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
+                EachMatch(link, matches, LinkType.Resource);
+
+                //images
+                matches = Regex.Matches(data, "<img.*?src=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
+                EachMatch(link, matches, LinkType.Resource);
+
+                //links
+                matches = Regex.Matches(data, "<a.*?href=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
+                EachMatch(link, matches, LinkType.Page);
             }
             catch (Exception e)
             {
                 LogError(link, e);
+            }
+        }
+
+        private void EachMatch(Link link, MatchCollection images, LinkType type)
+        {
+            foreach (Match image in images)
+            {
+                Link newUrl = FixUrl(image.Groups[1].ToString(), link.Url, type);
+                if (newUrl.Url != null)
+                    AddUrl(newUrl);
             }
         }
 
