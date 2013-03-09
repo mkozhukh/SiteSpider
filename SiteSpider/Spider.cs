@@ -131,7 +131,7 @@ namespace SiteSpider
             }
             else if (match.StartsWith("//"))
             {
-                match = "http:" + match.Substring(1);
+                match = "http:" + match;
             }
             else if (match.StartsWith("/"))
             {
