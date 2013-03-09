@@ -55,12 +55,19 @@ namespace SiteSpider
 
                 if (data is HttpWebResponse)
                 {
-                    HttpWebResponse http = (HttpWebResponse)data;
-                    if (http.StatusCode == HttpStatusCode.ServiceUnavailable || http.StatusCode == HttpStatusCode.Forbidden || http.StatusCode == HttpStatusCode.NotFound)
+                    HttpWebResponse http = (HttpWebResponse) data;
+                    if (http.StatusCode == HttpStatusCode.ServiceUnavailable ||
+                        http.StatusCode == HttpStatusCode.Forbidden || http.StatusCode == HttpStatusCode.NotFound)
                     {
                         throw new Exception("Not expected response content type: " + http.StatusCode.ToString());
                     }
                 }
+            }
+            catch (WebException web)
+            {
+                if (((HttpWebResponse)(web.Response)).StatusCode != HttpStatusCode.Forbidden || link.Type != LinkType.External)
+                    _nest.LogError(link, web);
+                web.Response.Dispose();
             }
             catch (Exception e)
             {
@@ -118,11 +125,19 @@ namespace SiteSpider
             if (index > 0)
                 match = match.Substring(0, index);
 
-            if (match.StartsWith("/"))
+            if (match.StartsWith("http://") || match.StartsWith("https://"))
+            {
+                //do nothing
+            }
+            else if (match.StartsWith("//"))
+            {
+                match = "http:" + match.Substring(1);
+            }
+            else if (match.StartsWith("/"))
             {
                 match = _domain + match.Substring(1);
             }
-            else if (!match.StartsWith("http://"))
+            else
             {
                 match = BaseUrl(currentUrl) + match;
             }
