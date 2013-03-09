@@ -1,64 +1,26 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SiteSpider
 {
-    public enum LinkType
+    class Spider
     {
-        Page,
-        Resource,
-        External
-    }
+        private readonly SpiderNest _nest;
+        private readonly WebClient _client;
+        private readonly String _domain;
 
-    public struct Link
-    {
-        public static Link Empty = new Link() { Url = null };
-        public string Url;
-        public string Source;
-        public LinkType Type;
-    }
-
-    public class SpiderNet
-    {
-        private WebClient client;
-        private ConcurrentQueue<Link> _pages;
-        private ConcurrentDictionary<String, bool> _visited;
-
-        public SpiderNet()
+        public Spider(SpiderNest nest, string domain)
         {
-            System.Net.ServicePointManager.DefaultConnectionLimit = 100;
+            _nest = nest;
+            _client = new WebClient();
+            _domain = domain;
         }
-        internal void Weave()
-        {
-            client = new WebClient();
-            _pages = new ConcurrentQueue<Link>();
-            _visited = new ConcurrentDictionary<string, bool>();
-            AddUrl(new Link(){ Url = StartPage, Source="", Type = LinkType.Page });
-
-            RunSpider();
-        }
-
-        public void AddUrl(Link link)
-        {
-            bool isExists;
-            if (_visited.TryGetValue(link.Url, out isExists))
-                if (isExists)
-                    return;
-
-            _visited.TryAdd(link.Url, true);
-            _pages.Enqueue(link);
-        }
-
-        public void RunSpider()
+        public void Weave()
         {
             Link link;
-            while (_pages.TryDequeue(out link))
+            while (_nest.GetUrl(out link))
             {
                 if (link.Type == LinkType.Page)
                     FetchPage(link);
@@ -67,25 +29,12 @@ namespace SiteSpider
             }
         }
 
-        private void Log(string message)
-        {
-            System.Console.WriteLine(message);
-        }
-
-        private void LogError(Link link, Exception e = null)
-        {
-            System.Console.WriteLine("[ERROR] Broken " +
-                                         link.Type.ToString() +
-                                         " link to " +
-                                         link.Url + "\n on page " + link.Source);
-        }
-
         private void FetchHead(Link link)
         {
             try
             {
-                Log("[HEAD] " + link.Url);
-                System.Net.WebRequest request = System.Net.WebRequest.Create(link.Url);
+                _nest.Log("[HEAD] " + link.Url);
+                WebRequest request = WebRequest.Create(link.Url);
                 request.Method = "HEAD";
                 var data = request.GetResponse();
 
@@ -105,7 +54,7 @@ namespace SiteSpider
             }
             catch (Exception e)
             {
-                LogError(link, e);
+                _nest.LogError(link, e);
             }
         }
 
@@ -113,8 +62,8 @@ namespace SiteSpider
         {
             try
             {
-                Log("[GET] " + link.Url);
-                string data = client.DownloadString(link.Url);
+                _nest.Log("[GET] " + link.Url);
+                string data = _client.DownloadString(link.Url);
                 MatchCollection matches;
 
                 //link tags
@@ -135,7 +84,7 @@ namespace SiteSpider
             }
             catch (Exception e)
             {
-                LogError(link, e);
+                _nest.LogError(link, e);
             }
         }
 
@@ -145,7 +94,7 @@ namespace SiteSpider
             {
                 Link newUrl = FixUrl(image.Groups[1].ToString(), link.Url, type);
                 if (newUrl.Url != null)
-                    AddUrl(newUrl);
+                    _nest.AddUrl(newUrl);
             }
         }
 
@@ -161,20 +110,20 @@ namespace SiteSpider
 
             if (match.StartsWith("/"))
             {
-                match = StartPage + match.Substring(1);
+                match = _domain + match.Substring(1);
             }
             else if (!match.StartsWith("http://"))
             {
                 match = BaseUrl(currentUrl) + match;
             }
 
-            if (!match.StartsWith(StartPage))
-                return new Link() {Url = match, Type = LinkType.External, Source = currentUrl};
+            if (!match.StartsWith(_domain))
+                return new Link { Url = match, Type = LinkType.External, Source = currentUrl };
 
             if (match.EndsWith(".zip") || match.EndsWith(".chm") || match.EndsWith(".war"))
                 type = LinkType.Resource;
 
-            return new Link(){Url = match, Source = currentUrl, Type = type };
+            return new Link { Url = match, Source = currentUrl, Type = type };
         }
 
         private string BaseUrl(string url)
@@ -187,26 +136,9 @@ namespace SiteSpider
             if (index > 0)
                 url = url.Substring(0, index + 1);
             else
-                url = StartPage;
+                url = _domain;
 
             return url;
-        }
-
-        public string Domain { get; set; }
-
-        private string _startPage;
-        public string StartPage
-        {
-            get { return _startPage; }
-            set
-            {
-                if (!value.StartsWith("http://"))
-                    value = "http://" + value;
-                if (!value.EndsWith("/"))
-                    value = value + "/";
-
-                _startPage = value;
-            }
         }
     }
 }

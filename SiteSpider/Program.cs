@@ -1,11 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using ManyConsole;
 
 namespace SiteSpider
@@ -29,17 +23,25 @@ namespace SiteSpider
 
     public class TestCommand: ConsoleCommand
     {
-        public string url;
+        public string Url;
+        public int Worker;
+        public bool Verbose;
         public TestCommand()
         {
+            //use two workers by default
+            Worker = 2;
+            Verbose = false;
+
             IsCommand("test");
-            HasOption("s|site=", "url of site to test", v => url = v);
+            HasOption("s|site=", "Url of site to test", v => Url = v);
+            HasOption("w|worker=", "number of workers", v => Worker = Int16.Parse(v));
+            HasOption("v|verbose=", "number of workers", v => Verbose = v.Equals("yes"));
         }
 
         public override int Run(string[] remainingArguments)
         {
-            var net = new SpiderNet(){ Domain = url, StartPage = url };
-            net.Weave();
+            var net = new SpiderNest() { Workers = Worker, Verbose = Verbose };
+            net.Weave(Url);
 
             return 0;
         }
