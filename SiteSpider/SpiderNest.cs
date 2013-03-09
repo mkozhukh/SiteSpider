@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SiteSpider
@@ -23,14 +24,17 @@ namespace SiteSpider
     {
         private ConcurrentQueue<Link> _pages;
         private ConcurrentDictionary<String, bool> _visited;
+        private int _busyWorkers;
+        private CancellationTokenSource _token = new CancellationTokenSource();
 
         public SpiderNest()
         {
+            Workers = 2;
+            _busyWorkers = 0;
             System.Net.ServicePointManager.DefaultConnectionLimit = 100;
         }
         internal void Weave(string domain, string startPage = null)
         {
-
             domain = fixStartPage(domain);
             if (startPage != null)
                 startPage = fixStartPage(startPage);
@@ -41,8 +45,29 @@ namespace SiteSpider
             _visited = new ConcurrentDictionary<string, bool>();
             AddUrl(new Link { Url = startPage, Source = "", Type = LinkType.Page });
 
-            var spider = new Spider(this, domain);
-            spider.Weave();
+            for (var i = 0; i < Workers; i++)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        var spider = new Spider(this, domain);
+                        spider.Weave(_token.Token);
+                    }, _token.Token);
+            }
+
+            WaitFinish();
+        }
+
+        private void WaitFinish()
+        {
+            while (true)
+            {
+                if (_busyWorkers == 0)
+                {
+                    _token.Cancel();
+                    return;
+                }
+                Thread.Sleep(500);
+            }
         }
 
         public bool GetUrl(out Link result)
@@ -52,6 +77,8 @@ namespace SiteSpider
         
         public void AddUrl(Link link)
         {
+            WorkerBusy();
+
             bool isExists;
             if (_visited.TryGetValue(link.Url, out isExists))
                 if (isExists)
@@ -91,5 +118,17 @@ namespace SiteSpider
 
         public int Workers { get; set; }
         public bool Verbose { get; set; }
+
+        public void WorkerFree()
+        {
+            Console.WriteLine("WorkerFree");
+            System.Threading.Interlocked.Decrement(ref _busyWorkers);
+        }
+
+        public void WorkerBusy()
+        {
+            Console.WriteLine("WorkerBusy");
+            System.Threading.Interlocked.Increment(ref _busyWorkers);
+        }
     }
 }

@@ -40,7 +40,7 @@ namespace SiteSpider
 
         public override int Run(string[] remainingArguments)
         {
-            var net = new SpiderNest() { Workers = Worker, Verbose = Verbose };
+            var net = new SpiderNest { Workers = Worker, Verbose = Verbose };
             net.Weave(Url);
 
             return 0;

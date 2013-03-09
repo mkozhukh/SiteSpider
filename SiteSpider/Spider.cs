@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace SiteSpider
 {
@@ -10,23 +10,33 @@ namespace SiteSpider
         private readonly SpiderNest _nest;
         private readonly WebClient _client;
         private readonly String _domain;
-
+         
         public Spider(SpiderNest nest, string domain)
         {
             _nest = nest;
             _client = new WebClient();
             _domain = domain;
         }
-        public void Weave()
+
+        public void Weave(CancellationToken token)
         {
             Link link;
-            while (_nest.GetUrl(out link))
-            {
-                if (link.Type == LinkType.Page)
-                    FetchPage(link);
-                else if (link.Type == LinkType.Resource || link.Type == LinkType.External)
-                    FetchHead(link);
+            
+            while(true){
+                while (_nest.GetUrl(out link))
+                {
+                    if (link.Type == LinkType.Page)
+                        FetchPage(link);
+                    else if (link.Type == LinkType.Resource || link.Type == LinkType.External)
+                        FetchHead(link);
+                    _nest.WorkerFree();
+                }
+
+                Thread.Sleep(500);
+                if (token.IsCancellationRequested)
+                    break;
             }
+
         }
 
         private void FetchHead(Link link)
