@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace SiteSpider
 {
-    class Spider
+    public class Spider
     {
         private readonly SpiderNest _nest;
         private readonly WebClient _client;
@@ -119,17 +119,17 @@ namespace SiteSpider
         {
             foreach (Match image in images)
             {
-                Link newUrl = FixUrl(image.Groups[1].ToString(), link.Url, type);
+                Link newUrl = StringToLink(image.Groups[1].ToString(), link.Url, type);
                 if (newUrl.Url != null)
                     _nest.AddUrl(newUrl);
             }
         }
 
-        private Link FixUrl(string match, string currentUrl, LinkType type = LinkType.Page)
+        public Link StringToLink(string match, string currentUrl, LinkType type = LinkType.Page)
         {
             //remove 
             var index = match.IndexOf("#");
-            if (index == 0)
+            if (index == 0 || match.StartsWith("javascript:"))
                 return Link.Empty; //inner link
 
             if (index > 0)
@@ -161,7 +161,7 @@ namespace SiteSpider
             return new Link { Url = match, Source = currentUrl, Type = type };
         }
 
-        private string BaseUrl(string url)
+        public string BaseUrl(string url)
         {
             int index = url.IndexOf("?");
             if (index >= 0)

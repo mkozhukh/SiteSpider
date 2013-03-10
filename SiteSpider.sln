@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteSpider", "SiteSpider\SiteSpider.csproj", "{517802D4-48CE-4F6E-9BBF-B8B51BA303B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestSiteSpider", "TestSiteSpider\TestSiteSpider.csproj", "{410CAB11-6412-4C2C-85DF-4A710F41DE98}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +15,10 @@ Global
 		{517802D4-48CE-4F6E-9BBF-B8B51BA303B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{517802D4-48CE-4F6E-9BBF-B8B51BA303B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{517802D4-48CE-4F6E-9BBF-B8B51BA303B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{410CAB11-6412-4C2C-85DF-4A710F41DE98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{410CAB11-6412-4C2C-85DF-4A710F41DE98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{410CAB11-6412-4C2C-85DF-4A710F41DE98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{410CAB11-6412-4C2C-85DF-4A710F41DE98}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
