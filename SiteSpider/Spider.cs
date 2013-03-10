@@ -135,22 +135,7 @@ namespace SiteSpider
             if (index > 0)
                 match = match.Substring(0, index);
 
-            if (match.StartsWith("http://") || match.StartsWith("https://"))
-            {
-                //do nothing
-            }
-            else if (match.StartsWith("//"))
-            {
-                match = "http:" + match;
-            }
-            else if (match.StartsWith("/"))
-            {
-                match = _domain + match.Substring(1);
-            }
-            else
-            {
-                match = BaseUrl(currentUrl) + match;
-            }
+            match = new Uri(new Uri(currentUrl), match).ToString();
 
             if (!match.StartsWith(_domain))
                 return new Link { Url = match, Type = LinkType.External, Source = currentUrl };
@@ -159,21 +144,6 @@ namespace SiteSpider
                 type = LinkType.Resource;
 
             return new Link { Url = match, Source = currentUrl, Type = type };
-        }
-
-        public string BaseUrl(string url)
-        {
-            int index = url.IndexOf("?");
-            if (index >= 0)
-                url = url.Substring(0, index);
-
-            index = url.LastIndexOf("/");
-            if (index > 0)
-                url = url.Substring(0, index + 1);
-            else
-                url = _domain;
-
-            return url;
         }
     }
 }
