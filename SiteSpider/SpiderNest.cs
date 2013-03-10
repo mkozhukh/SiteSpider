@@ -61,7 +61,7 @@ namespace SiteSpider
         {
             while (true)
             {
-                if (_busyWorkers == 0)
+                if (_busyWorkers < 1)
                 {
                     _token.Cancel();
                     return;

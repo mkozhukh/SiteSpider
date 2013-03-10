@@ -65,9 +65,19 @@ namespace SiteSpider
             }
             catch (WebException web)
             {
-                if (((HttpWebResponse)(web.Response)).StatusCode != HttpStatusCode.Forbidden || link.Type != LinkType.External)
+                if (web.Response != null)
+                {
+                    var status = ((HttpWebResponse) (web.Response)).StatusCode;
+                    /*
+                     * for exteranl urls we will ignore Forbidden and NotAllowed responses, as their servers
+                     * can be configured to ignore HEAD request
+                     */
+                    if ((status != HttpStatusCode.Forbidden && status != HttpStatusCode.MethodNotAllowed) ||
+                        link.Type != LinkType.External)
+                        _nest.LogError(link, web);
+                    web.Response.Dispose();
+                } else
                     _nest.LogError(link, web);
-                web.Response.Dispose();
             }
             catch (Exception e)
             {
