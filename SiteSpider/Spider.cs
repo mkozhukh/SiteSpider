@@ -27,7 +27,7 @@ namespace SiteSpider
                 {
                     if (link.Type == LinkType.Page)
                         FetchPage(link);
-                    else if (link.Type == LinkType.Resource || link.Type == LinkType.External)
+                    else if (link.Type == LinkType.Resource || link.Type == LinkType.External || link.Type == LinkType.ExternalNoFollow)
                         FetchHead(link);
                     _nest.WorkerFree();
                 }
@@ -73,7 +73,7 @@ namespace SiteSpider
                      * can be configured to ignore HEAD request
                      */
                     if ((status != HttpStatusCode.Forbidden && status != HttpStatusCode.MethodNotAllowed) ||
-                        link.Type != LinkType.External)
+                        (link.Type != LinkType.External && link.Type != LinkType.ExternalNoFollow))
                         _nest.LogError(link, web);
                     web.Response.Dispose();
                 } else
@@ -107,11 +107,26 @@ namespace SiteSpider
 
                 //links
                 matches = Regex.Matches(data, "<a.*?href=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
-                EachMatch(link, matches, LinkType.Page);
+                EachMatchLink(link, matches, LinkType.Page);
             }
             catch (Exception e)
             {
                 _nest.LogError(link, e);
+            }
+        }
+
+        private void EachMatchLink(Link link, MatchCollection images, LinkType type)
+        {
+            foreach (Match image in images)
+            {
+                Link newUrl = StringToLink(image.Groups[1].ToString(), link.Url, type);
+                if (newUrl.Url != null)
+                {
+                    var nofollow = Regex.IsMatch(image.Groups[0].ToString(), "[ \t\n]rel=[\"']nofollow[\"']", RegexOptions.IgnoreCase);
+                    if (nofollow && newUrl.Type == LinkType.External)
+                        newUrl.Type = LinkType.ExternalNoFollow;
+                    _nest.AddUrl(newUrl);
+                }
             }
         }
 

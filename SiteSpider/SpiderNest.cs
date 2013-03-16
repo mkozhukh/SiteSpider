@@ -9,7 +9,8 @@ namespace SiteSpider
     {
         Page,
         Resource,
-        External
+        External,
+        ExternalNoFollow
     }
 
     public struct Link
@@ -26,7 +27,7 @@ namespace SiteSpider
         private ConcurrentDictionary<String, bool> _visited;
         private int _busyWorkers;
         private CancellationTokenSource _token = new CancellationTokenSource();
-
+        
         public SpiderNest()
         {
             Workers = 2;
@@ -77,6 +78,9 @@ namespace SiteSpider
 
         public void AddUrl(Link link)
         {
+            if (IgnoreMask != null && link.Url.Contains(IgnoreMask))
+                return;
+
             bool isExists;
             if (_visited.TryGetValue(link.Url, out isExists))
                 if (isExists)
@@ -119,6 +123,7 @@ namespace SiteSpider
 
         public int Workers { get; set; }
         public bool Verbose { get; set; }
+        public string IgnoreMask { get; set; }
 
         public void WorkerFree()
         {
