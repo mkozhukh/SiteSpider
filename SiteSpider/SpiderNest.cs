@@ -80,6 +80,8 @@ namespace SiteSpider
         {
             if (IgnoreMask != null && link.Url.Contains(IgnoreMask))
                 return;
+            if (ReportMask != null && link.Url.Contains(ReportMask))
+                LogReport(link);
 
             bool isExists;
             if (_visited.TryGetValue(link.Url, out isExists))
@@ -110,6 +112,11 @@ namespace SiteSpider
                 Console.WriteLine(message);
         }
 
+        public void LogReport(Link link)
+        {
+            Console.WriteLine("[REPORT] " + link.Url + "\n on page " + link.Source);
+        }
+
         public void LogError(Link link, Exception e = null)
         {
             Console.WriteLine("[ERROR] Broken " +
@@ -124,6 +131,7 @@ namespace SiteSpider
         public int Workers { get; set; }
         public bool Verbose { get; set; }
         public string IgnoreMask { get; set; }
+        public string ReportMask { get; set; }
 
         public void WorkerFree()
         {

@@ -27,6 +27,7 @@ namespace SiteSpider
         public int Worker;
         public bool Verbose;
         public string IgnoreMask;
+        public string ReportMask;
         public TestCommand()
         {
             //use two workers by default
@@ -38,13 +39,14 @@ namespace SiteSpider
             HasOption("w|worker=", "number of workers", v => Worker = Int16.Parse(v));
             HasOption("v|verbose=", "number of workers", v => Verbose = v.Equals("yes"));
             HasOption("i|ignore=", "ignore urls with defined mask", v => IgnoreMask = v);
+            HasOption("r|report=", "report urls with defined mask", v => ReportMask = v);
         }
 
         public override int Run(string[] remainingArguments)
         {
             if (Url != null)
             {
-                var net = new SpiderNest { Workers = Worker, Verbose = Verbose, IgnoreMask = IgnoreMask };
+                var net = new SpiderNest { Workers = Worker, Verbose = Verbose, IgnoreMask = IgnoreMask, ReportMask = ReportMask };
                 net.Weave(Url);
             }
 
