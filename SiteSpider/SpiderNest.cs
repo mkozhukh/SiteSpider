@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Enumerable = System.Linq.Enumerable;
 
 namespace SiteSpider
 {
@@ -18,6 +19,7 @@ namespace SiteSpider
         public static Link Empty = new Link { Url = null };
         public string Url;
         public string Source;
+        public string Origin;
         public LinkType Type;
     }
 
@@ -44,7 +46,7 @@ namespace SiteSpider
 
             _pages = new ConcurrentQueue<Link>();
             _visited = new ConcurrentDictionary<string, bool>();
-            AddUrl(new Link { Url = startPage, Source = "", Type = LinkType.Page });
+            AddUrl(new Link { Url = startPage, Source = "", Type = LinkType.Page, Origin = "" });
 
             for (var i = 0; i < Workers; i++)
             {
@@ -78,10 +80,8 @@ namespace SiteSpider
 
         public void AddUrl(Link link)
         {
-            if (IgnoreMask != null && link.Url.Contains(IgnoreMask))
-                return;
-            if (ReportMask != null && link.Url.Contains(ReportMask))
-                LogReport(link);
+            if (ignoreFilter(link.Url)) return;
+            reportFilter(link);
 
             bool isExists;
             if (_visited.TryGetValue(link.Url, out isExists))
@@ -93,6 +93,24 @@ namespace SiteSpider
                 WorkerBusy();
                 _pages.Enqueue(link);
             }
+        }
+
+        private void reportFilter(Link link)
+        {
+            if (ReportMask != null)
+            {
+                var test = Enumerable.Any(ReportMask, link.Url.Contains);
+                if (test)
+                    LogReport(link);
+            }
+        }
+
+        private bool ignoreFilter(string url)
+        {
+            if (IgnoreMask != null)
+                return Enumerable.Any(IgnoreMask, url.Contains);
+
+            return false;
         }
 
         private string fixStartPage(string value)
@@ -122,7 +140,7 @@ namespace SiteSpider
             Console.WriteLine("[ERROR] Broken " +
                               link.Type.ToString() +
                               " link to " +
-                              link.Url + "\n on page " + link.Source);
+                              link.Url + "\n on page " + link.Source + " (from "+link.Origin+")");
 
             if (e != null && Verbose)
                 Console.WriteLine("[EXCEPTION] " + e);
@@ -130,8 +148,8 @@ namespace SiteSpider
 
         public int Workers { get; set; }
         public bool Verbose { get; set; }
-        public string IgnoreMask { get; set; }
-        public string ReportMask { get; set; }
+        public string[] IgnoreMask { get; set; }
+        public string[] ReportMask { get; set; }
 
         public void WorkerFree()
         {

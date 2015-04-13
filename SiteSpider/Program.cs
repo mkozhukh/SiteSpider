@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using ManyConsole;
 
 namespace SiteSpider
@@ -8,6 +9,8 @@ namespace SiteSpider
     {
         static int Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
+
             // locate any commands in the assembly (or use an IoC container, or whatever source)
             var commands = GetCommands();
 
@@ -46,7 +49,9 @@ namespace SiteSpider
         {
             if (Url != null)
             {
-                var net = new SpiderNest { Workers = Worker, Verbose = Verbose, IgnoreMask = IgnoreMask, ReportMask = ReportMask };
+                var reports = ReportMask != null ? ReportMask.Split(',') : null;
+                var ignores = IgnoreMask != null ? IgnoreMask.Split(',') : null;
+                var net = new SpiderNest { Workers = Worker, Verbose = Verbose, IgnoreMask = ignores, ReportMask = reports };
                 net.Weave(Url);
             }
 

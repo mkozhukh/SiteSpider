@@ -44,7 +44,7 @@ namespace SiteSpider
             try
             {
                 _nest.Log("[HEAD] " + link.Url);
-                WebRequest request = WebRequest.Create(link.Url);
+                var request = WebRequest.Create(link.Url);
                 request.Method = "HEAD";
                 var data = request.GetResponse();
 
@@ -55,7 +55,7 @@ namespace SiteSpider
 
                 if (data is HttpWebResponse)
                 {
-                    HttpWebResponse http = (HttpWebResponse) data;
+                    var http = (HttpWebResponse) data;
                     if (http.StatusCode == HttpStatusCode.ServiceUnavailable ||
                         http.StatusCode == HttpStatusCode.Forbidden || http.StatusCode == HttpStatusCode.NotFound)
                     {
@@ -72,7 +72,7 @@ namespace SiteSpider
                      * for exteranl urls we will ignore Forbidden and NotAllowed responses, as their servers
                      * can be configured to ignore HEAD request
                      */
-                    if ((status != HttpStatusCode.Forbidden && status != HttpStatusCode.MethodNotAllowed) ||
+                    if ((status != HttpStatusCode.Forbidden && status != HttpStatusCode.MethodNotAllowed && status != HttpStatusCode.NotImplemented) ||
                         (link.Type != LinkType.External && link.Type != LinkType.ExternalNoFollow))
                         _nest.LogError(link, web);
                     web.Response.Dispose();
@@ -92,6 +92,8 @@ namespace SiteSpider
                 _nest.Log("[GET] " + link.Url);
                 string data = _client.DownloadString(link.Url);
                 MatchCollection matches;
+
+                data = cleanData(data);
 
                 //link tags
                 matches = Regex.Matches(data, "<link.*?href=[\"'](.*?)[\"'].*?>", RegexOptions.IgnoreCase);
@@ -115,11 +117,16 @@ namespace SiteSpider
             }
         }
 
+        public string cleanData(string data)
+        {
+            return Regex.Replace(data, "<script(| type=(\"|')[^\"]+(\"|'))>.*?</script>", "", RegexOptions.IgnoreCase);
+        }
+
         private void EachMatchLink(Link link, MatchCollection images, LinkType type)
         {
             foreach (Match image in images)
             {
-                Link newUrl = StringToLink(image.Groups[1].ToString(), link.Url, type);
+                Link newUrl = StringToLink(image.Groups[1].ToString(), link.Url, type, link.Source);
                 if (newUrl.Url != null)
                 {
                     var nofollow = Regex.IsMatch(image.Groups[0].ToString(), "[ \t\n]rel=[\"']nofollow[\"']", RegexOptions.IgnoreCase);
@@ -134,13 +141,13 @@ namespace SiteSpider
         {
             foreach (Match image in images)
             {
-                Link newUrl = StringToLink(image.Groups[1].ToString(), link.Url, type);
+                Link newUrl = StringToLink(image.Groups[1].ToString(), link.Url, type, link.Source);
                 if (newUrl.Url != null)
                     _nest.AddUrl(newUrl);
             }
         }
 
-        public Link StringToLink(string match, string currentUrl, LinkType type = LinkType.Page)
+        public Link StringToLink(string match, string currentUrl, LinkType type = LinkType.Page, string originUrl = "")
         {
             //remove 
             var index = match.IndexOf("#");
@@ -158,7 +165,7 @@ namespace SiteSpider
             if (match.EndsWith(".zip") || match.EndsWith(".chm") || match.EndsWith(".war"))
                 type = LinkType.Resource;
 
-            return new Link { Url = match, Source = currentUrl, Type = type };
+            return new Link { Url = match, Source = currentUrl, Type = type, Origin = originUrl };
         }
     }
 }
