@@ -55,6 +55,13 @@ namespace TestSiteSpider
             source = "some <script> <script>test<sc + ript> </script>";
             test = spider.cleanData(source);
             Assert.Equal(test, "some ");
+
+            //page with script tag
+            source = "some <script type=\"text/javascript\" charset=\"utf-8\"> test </script>";
+            test = spider.cleanData(source);
+            Assert.Equal(test, "some ");
+
+            
         }
 
         private Spider getSpider(string url)

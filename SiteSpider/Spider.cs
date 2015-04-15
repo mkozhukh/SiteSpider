@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -15,6 +16,7 @@ namespace SiteSpider
         {
             _nest = nest;
             _client = new WebClient();
+            _client.Encoding = Encoding.UTF8;
             _domain = domain;
         }
 
@@ -119,7 +121,7 @@ namespace SiteSpider
 
         public string cleanData(string data)
         {
-            return Regex.Replace(data, "<script(| type=(\"|')[^\"]+(\"|'))>.*?</script>", "", RegexOptions.IgnoreCase);
+            return Regex.Replace(data, "<script([^s]|s[^r])*>.*?</script>", "", RegexOptions.IgnoreCase);
         }
 
         private void EachMatchLink(Link link, MatchCollection images, LinkType type)

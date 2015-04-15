@@ -140,7 +140,7 @@ namespace SiteSpider
             Console.WriteLine("[ERROR] Broken " +
                               link.Type.ToString() +
                               " link to " +
-                              link.Url + "\n on page " + link.Source + " (from "+link.Origin+")");
+                              link.Url + "\n on page " + link.Source + "\n\t from "+link.Origin);
 
             if (e != null && Verbose)
                 Console.WriteLine("[EXCEPTION] " + e);
